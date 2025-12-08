@@ -56,7 +56,7 @@ function createOverlay() {
     isSelecting = true;
     startX = e.clientX;
     startY = e.clientY;
-    
+
     // Reset box styles
     selBox.style.left = startX + 'px';
     selBox.style.top = startY + 'px';
@@ -88,7 +88,7 @@ function createOverlay() {
 
     // Get final coordinates
     const rect = selBox.getBoundingClientRect();
-    
+
     // Hide selection layer immediately so we don't capture the green box border
     selBox.style.display = 'none';
     selLayer.classList.remove('active');
@@ -126,5 +126,17 @@ function createOverlay() {
         resultArea.textContent = response.error || "_";
       }
     });
+  });
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (resultOverlay.classList.contains('hidden')) return;
+    if (resultOverlay.contains(e.target)) return;
+    // If the click was on the selection layer (e.g. finishing a selection), don't hide
+    if (e.target === selLayer) return;
+
+    resultOverlay.classList.add('hidden');
+    selLayer.classList.remove('active');
+    selBox.style.display = 'none';
   });
 }
