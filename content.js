@@ -40,7 +40,7 @@ function createOverlay() {
         // ACTIVATE
         resultOverlay.classList.remove('hidden');
         selLayer.classList.add('active'); // Enable selection mode
-        resultArea.textContent = "Select";
+        resultArea.textContent = ".";
       } else {
         // DEACTIVATE
         resultOverlay.classList.add('hidden');
@@ -95,11 +95,11 @@ function createOverlay() {
 
     // Minimal validation
     if (rect.width < 10 || rect.height < 10) {
-      resultArea.textContent = "Selection too small";
+      resultArea.textContent = "_";
       return;
     }
 
-    resultArea.textContent = "...";
+    resultArea.textContent = ".";
 
     // Capture and Analyze
     // We send coordinates relative to the viewport + pixel ratio
@@ -123,7 +123,7 @@ function createOverlay() {
       if (response && response.success) {
         resultArea.textContent = response.data;
       } else {
-        resultArea.textContent = response.error || "X";
+        resultArea.textContent = response.error || "_";
       }
     });
   });
