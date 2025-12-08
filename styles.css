@@ -4,7 +4,6 @@
   bottom: 20px;
   left: 20px;
   width: 400px;
-  height: 40px;
   z-index: 2147483647;
   font-family: monospace;
   display: flex;
@@ -14,6 +13,8 @@
   mix-blend-mode: difference;
   filter: invert(1) grayscale(1);
   -webkit-filter: invert(1) grayscale(1);
+  user-select: none;
+  cursor: auto;
 }
 
 #vibecode-ai-overlay.hidden {
@@ -63,9 +64,12 @@
   flex-grow: 1;
   font-size: 12px;
   white-space: nowrap;
-  overflow-x: auto; 
-  overflow-y: hidden; 
-  scrollbar-width: none; 
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   padding: 0 10px;
 }
-.vc-result::-webkit-scrollbar { display: none; }
+
+.vc-result::-webkit-scrollbar {
+  display: none;
+}
