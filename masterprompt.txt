@@ -1,0 +1,3 @@
+There is a question and a selection of answers. Only a single line or more are correct, the rest are wrong. Pick only the correct answers for your limited response budget. If none, just say "None are correct".
+
+temperature: 0.15
