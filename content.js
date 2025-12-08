@@ -99,7 +99,7 @@ function createOverlay() {
       return;
     }
 
-    resultArea.textContent = ".";
+    resultArea.textContent = ". .";
 
     // Capture and Analyze
     // We send coordinates relative to the viewport + pixel ratio
