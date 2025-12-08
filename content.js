@@ -52,19 +52,70 @@ function createOverlay() {
 
   // --- Mouse Selection Logic ---
 
-  selLayer.addEventListener('mousedown', (e) => {
-    isSelecting = true;
-    startX = e.clientX;
-    startY = e.clientY;
+  // 1. Click to Start/End Selection
+  selLayer.addEventListener('click', (e) => {
+    // If we are not selecting, this click STARTS the selection
+    if (!isSelecting) {
+      isSelecting = true;
+      startX = e.clientX;
+      startY = e.clientY;
 
-    // Reset box styles
-    selBox.style.left = startX + 'px';
-    selBox.style.top = startY + 'px';
-    selBox.style.width = '0px';
-    selBox.style.height = '0px';
-    selBox.style.display = 'block';
+      // Reset box styles
+      selBox.style.left = startX + 'px';
+      selBox.style.top = startY + 'px';
+      selBox.style.width = '0px';
+      selBox.style.height = '0px';
+      selBox.style.display = 'block';
+      return;
+    }
+
+    // If we ARE selecting, this click ENDS the selection
+    isSelecting = false;
+
+    // Get final coordinates
+    const rect = selBox.getBoundingClientRect();
+
+    // Hide selection layer immediately
+    selBox.style.display = 'none';
+
+    // If selection is tiny, treat as invalid or potential double-click
+    if (rect.width < 10 || rect.height < 10) {
+      resultArea.textContent = "_";
+      // Do NOT remove active class here, so dblclick can fire or user can retry
+      return;
+    }
+
+    // Valid selection
+    selLayer.classList.remove('active');
+    resultArea.textContent = ". .";
+
+    // Capture and Analyze
+    const area = {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+      devicePixelRatio: window.devicePixelRatio || 1
+    };
+
+    chrome.runtime.sendMessage({
+      action: "analyze_area",
+      area: area
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        resultArea.textContent = "Error: " + chrome.runtime.lastError.message;
+        return;
+      }
+
+      if (response && response.success) {
+        resultArea.textContent = response.data;
+      } else {
+        resultArea.textContent = response.error || "_";
+      }
+    });
   });
 
+  // 2. Mouse Move to Update Selection Box
   selLayer.addEventListener('mousemove', (e) => {
     if (!isSelecting) return;
 
@@ -82,32 +133,20 @@ function createOverlay() {
     selBox.style.top = top + 'px';
   });
 
-  selLayer.addEventListener('mouseup', async (e) => {
-    if (!isSelecting) return;
+  // 3. Double Click to Capture Whole Page
+  selLayer.addEventListener('dblclick', (e) => {
+    // Stop any active selection
     isSelecting = false;
-
-    // Get final coordinates
-    const rect = selBox.getBoundingClientRect();
-
-    // Hide selection layer immediately so we don't capture the green box border
     selBox.style.display = 'none';
     selLayer.classList.remove('active');
 
-    // Minimal validation
-    if (rect.width < 10 || rect.height < 10) {
-      resultArea.textContent = "_";
-      return;
-    }
-
     resultArea.textContent = ". .";
 
-    // Capture and Analyze
-    // We send coordinates relative to the viewport + pixel ratio
     const area = {
-      x: rect.left,
-      y: rect.top,
-      width: rect.width,
-      height: rect.height,
+      x: 0,
+      y: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
       devicePixelRatio: window.devicePixelRatio || 1
     };
 
