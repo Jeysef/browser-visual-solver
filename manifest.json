@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Firefox Dev tools",
-  "version": "2.0",
-  "description": "Adds debugging, stepping decompiling capabilities.",
+  "name": "AI Screen Snipper",
+  "version": "2.1",
+  "description": "Select screen area and solve with Local AI.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -11,11 +11,11 @@
   ],
   "host_permissions": [
     "http://localhost:1234/*",
-    "https://dev-ai.bytestring.net/*",
     "<all_urls>"
   ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["background.js"],
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -31,7 +31,7 @@
         "default": "Ctrl+Period",
         "mac": "Command+Period"
       },
-      "description": "Toggle Ghost AI"
+      "description": "Toggle AI Snipper"
     }
   },
   "browser_specific_settings": {

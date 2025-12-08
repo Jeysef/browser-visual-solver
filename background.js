@@ -9,18 +9,19 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "analyze") {
-    handleAnalysis(request).then(sendResponse);
-    return true; 
+  if (request.action === "analyze_area") {
+    handleCroppedAnalysis(request.area).then(sendResponse);
+    return true; // Keep channel open for async response
   }
 });
 
-async function handleAnalysis(data) {
+async function handleCroppedAnalysis(area) {
   try {
-    const dataUrl = await new Promise((resolve) => {
+    // 1. Capture the WHOLE visible tab
+    const dataUrl = await new Promise((resolve, reject) => {
       chrome.tabs.captureVisibleTab(undefined, { format: "png" }, (image) => {
         if (chrome.runtime.lastError) {
-          resolve(null);
+          reject(chrome.runtime.lastError);
         } else {
           resolve(image);
         }
@@ -29,24 +30,37 @@ async function handleAnalysis(data) {
 
     if (!dataUrl) return { success: false, error: "Capture failed" };
 
+    // 2. Crop the image using OffscreenCanvas
+    const croppedDataUrl = await cropImage(dataUrl, area);
+
+    let modelId = "qwen/qwen3-vl-4b";
+    try {
+      const modelsResponse = await fetch("http://localhost:1234/api/v0/models");
+      const modelsJson = await modelsResponse.json();
+      
+      // Select the first found model from the data array
+      if (modelsJson.data && modelsJson.data.length > 0) {
+        modelId = modelsJson.data[0].id;
+        console.log("Using model:", modelId);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch model list, using default 'local-model'.", e);
+    }
+
+    // 3. Send to AI
     const payload = {
-      model: "local-model",
+      model: modelId,
       messages: [
         {
           role: "user",
           content: [
-            { type: "image_url", image_url: { url: dataUrl } },
-            { type: "text",text: "what is or are the correct answers of guestion in the center?  first respond with first 2 words of the question, then index of correct responses, then first 2 word of those responses."},
-            // { type: "text",text: "CONTEXT:UI:WIMP=Window/Icon/Menu/Pointer;MVC=Model(data)separate View/Controller;Material Design=flat 1dp,rigid,planar shape-shift,vertical move,anims req;Usability=Learnability,Flexibility,Robustness;UI Rules=Workflow,feedback,predictable;Direct Manipulation=visible,instant,reversible;InfoArch=org,nav,reduce;UCD=user-focus;Use Case=intentions;Wireframes=hand-drawn;Testing:Pilot=pre-study;Metrics=cmds/errors/time;Quant=objective/hypothesis;Qual=deep/subjective;FocusGroup=discuss;Verbal=think-aloud;Participants:1=major errors,4-6=80%,15+=map;Gamification=define rules/success,PBL(badges)=rep not core;FLOW=challenge/skill balance.WPF:Desktop fw,logic/view split,Direct3D;XAML=GUI def;Layouts=Grid,Stack,Canvas,Dock;Binding=1Time,1Way,2Way(INotifyPropertyChanged);Converters=type-change;DataContext=source(set 1x).WinAPI:Messages=OS-App comms(WM_PAINT=redraw);DeviceContext=gfx abstract;Input:Focus gets keys,Key=3msgs(down/up/char),Mouse/Key state=msg params/API;Pen:Create->Select->Draw(LineTo)->SelectOld->Delete;Brush!=line color;Resources(.rc)=assets no code;MDI=multi-doc;Modal=blocks parent.Web:AJAX=async partial update,complex dev,bad for static menu;XHR=onreadystatechange calls multi;JSON=text,lighter than XML,no bin opt,parse JSON/eval(!DOM);JS=client interpreted,events,anon func!=run once;DOM=Tree;CSS=style;Media Queries=device/print;Responsive=fluid;HTML5!=replace CSS;Arch:Server=API/Client=App.Qt:QWidget=gfx,QObject=base;QML=declarative(JS/CSS syntax);QtQuick=engine;Signals/Slots=emit/connect(needs QObject);MOC=ext C++;Build=qmake/gcc/moc/uic;Resources=exe embed;Mem=parent deletes child.iOS:UITableView=dataSource.GTK:C/GObject event-driven."}
+            { type: "image_url", image_url: { url: croppedDataUrl } },
           ]
         }
       ],
-      temperature: 0.7,
-    //   max_tokens: 100, // Limit tokens since UI is small
       stream: false
     };
 
-    // const response = await fetch("http://dev-ai.bytestring.net/v1/chat/completions", {
     const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,20 +70,55 @@ async function handleAnalysis(data) {
     const json = await response.json();
 
     if (json.choices && json.choices.length > 0) {
-        let content = json.choices[0].message.content;
-
-  // Regex to remove content between <think> and </think> tags
-  // [\s\S] ensures it matches across newlines
-  // *? ensures it is non-greedy (stops at the first closing tag)
-  // i flag makes it case-insensitive
-  const cleanedContent = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-
-  return { success: true, data: cleanedContent };
+      let content = json.choices[0].message.content;
+      // Clean up <think> tags if your local model outputs them
+      const cleanedContent = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+      return { success: true, data: cleanedContent };
     } else {
-      return { success: false, error: "No response" };
+      return { success: false, error: "No response from AI" };
     }
 
   } catch (error) {
+    console.error(error);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Helper to crop image in Background Service Worker
+ * Uses OffscreenCanvas (Standard in Manifest V3)
+ */
+async function cropImage(base64Data, area) {
+  // Fetch the data URL to get a blob
+  const response = await fetch(base64Data);
+  const blob = await response.blob();
+  
+  // Create a bitmap from the blob
+  const bitmap = await createImageBitmap(blob);
+  
+  // Handle Device Pixel Ratio (Retina/HighDPI screens)
+  // captureVisibleTab returns the actual physical pixel image
+  const scale = area.devicePixelRatio;
+  
+  const sX = area.x * scale;
+  const sY = area.y * scale;
+  const sW = area.width * scale;
+  const sH = area.height * scale;
+
+  // Create canvas of the specific crop size
+  const canvas = new OffscreenCanvas(sW, sH);
+  const ctx = canvas.getContext('2d');
+
+  // Draw strictly the cropped area
+  // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+  ctx.drawImage(bitmap, sX, sY, sW, sH, 0, 0, sW, sH);
+
+  // Convert back to base64
+  const blobResult = await canvas.convertToBlob({ type: 'image/jpeg' });
+  
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blobResult);
+  });
 }

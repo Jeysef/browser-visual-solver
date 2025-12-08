@@ -1,26 +1,16 @@
-/* Ghost Container */
+/* Container for the Result Bar */
 #vibecode-ai-overlay {
   position: fixed;
   bottom: 20px;
   left: 20px;
   width: 400px;
-  height: 40px; /* Fixed small height */
-  /* background: rgba(0, 0, 0, 0.2); Barely visible */
-  /* backdrop-filter: blur(2px); */
-  color: rgba(0, 0, 0, 0.2); /* Ghost text */
-  border-radius: 4px;
+  height: 40px;
+  /* color: rgba(0, 0, 0, 0.2); */
   z-index: 2147483647;
   font-family: monospace;
   display: flex;
   align-items: center;
-  overflow: hidden;
-  /* border: 1px solid rgba(255,255,255,0.05); */
   transition: opacity 0.3s ease;
-  pointer-events: none; /* Let clicks pass through mostly */
-}
-
-/* Enable pointer events only on the overlay itself so you can drag/click settings if needed */
-#vibecode-ai-overlay {
   pointer-events: auto;
 }
 
@@ -29,7 +19,36 @@
   pointer-events: none;
 }
 
-/* Layout */
+/* 
+   The Full Screen Selection Layer 
+   This covers the whole screen when active to allow drawing
+*/
+#vc-selection-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483646;
+  /* cursor: crosshair; */
+  background: transparent;
+  display: none;
+}
+
+#vc-selection-layer.active {
+  display: block;
+}
+
+/* The actual box drawn by the user */
+#vc-selection-box {
+  position: absolute;
+  /* border: 2px solid #72727232;
+  background-color: rgba(0, 255, 0, 0); */
+  display: none;
+  pointer-events: none; /* Let clicks pass through if needed */
+}
+
+/* Result Bar Styling */
 .vc-container {
   display: flex;
   flex-direction: row;
@@ -37,71 +56,19 @@
   height: 100%;
   align-items: center;
   padding: 0 5px;
+  background: rgba(0,0,0,0.8);
+  border-radius: 4px;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
-/* Tiny Settings Button */
-.vc-toggle-settings {
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.3);
-  cursor: pointer;
-  font-size: 10px; /* Extra small */
-  padding: 2px;
-  margin-right: 5px;
-  flex-shrink: 0;
-}
-
-.vc-toggle-settings:hover {
-  color: rgba(255,255,255,0.8);
-}
-
-/* The Result Text (scrolling line) */
 .vc-result {
   flex-grow: 1;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
-  
-  /* Allow scrolling */
   overflow-x: auto; 
   overflow-y: hidden; 
-  
-  /* Remove ellipsis so you can see the end when scrolling */
-  text-overflow: clip; 
-  line-height: 40px;
-
-  /* FIREFOX: Hide scrollbar */
   scrollbar-width: none; 
-
-  /* IE/Edge: Hide scrollbar */
-  -ms-overflow-style: none;
+  padding: 0 10px;
 }
-
-/* CHROME/SAFARI: Hide scrollbar (good to have for compatibility) */
-.vc-result::-webkit-scrollbar {
-  display: none;
-}
-
-/* Settings Panel (Hidden overlay) */
-.vc-settings {
-  position: absolute;
-  bottom: 45px; /* Appears above the bar */
-  left: 0;
-  width: 100%;
-  /* background: rgba(0,0,0,0.8); */
-  padding: 10px;
-  border-radius: 4px;
-  display: none;
-  backdrop-filter: blur(10px);
-}
-
-.vc-settings.show {
-  display: block;
-}
-
-.vc-input {
-  /* background: rgba(255, 255, 255, 0.1); */
-  color: #ccc;
-  width: 95%;
-  font-size: 10px;
-  padding: 4px;
-}
+.vc-result::-webkit-scrollbar { display: none; }
