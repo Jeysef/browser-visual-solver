@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AI Screen Snipper",
+  "name": "Firefox Dev Tools",
   "version": "2.1",
-  "description": "Select screen area and solve with Local AI.",
+  "description": "Analytics & Debug logging",
   "permissions": [
     "activeTab",
     "scripting",
