@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Firefox Dev tools",
+  "version": "2.0",
+  "description": "Adds debugging, stepping decompiling capabilities.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:1234/*",
+    "https://dev-ai.bytestring.net/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-ui": {
+      "suggested_key": {
+        "default": "Ctrl+Period",
+        "mac": "Command+Period"
+      },
+      "description": "Toggle Ghost AI"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "vibecode-ghost@local.dev",
+      "strict_min_version": "109.0"
+    }
+  }
+}
