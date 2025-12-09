@@ -37,7 +37,7 @@ async function handleCroppedAnalysis(area) {
     try {
       const modelsResponse = await fetch("http://localhost:1234/api/v0/models");
       const modelsJson = await modelsResponse.json();
-      
+
       // Select the first found model from the data array
       if (modelsJson.data && modelsJson.data.length > 0) {
         modelId = modelsJson.data[0].id;
@@ -75,7 +75,7 @@ async function handleCroppedAnalysis(area) {
       const cleanedContent = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
       return { success: true, data: cleanedContent };
     } else {
-      return { success: false, error: "No response from AI" };
+      return { success: false, error: "_" };
     }
 
   } catch (error) {
@@ -92,14 +92,14 @@ async function cropImage(base64Data, area) {
   // Fetch the data URL to get a blob
   const response = await fetch(base64Data);
   const blob = await response.blob();
-  
+
   // Create a bitmap from the blob
   const bitmap = await createImageBitmap(blob);
-  
+
   // Handle Device Pixel Ratio (Retina/HighDPI screens)
   // captureVisibleTab returns the actual physical pixel image
   const scale = area.devicePixelRatio;
-  
+
   const sX = area.x * scale;
   const sY = area.y * scale;
   const sW = area.width * scale;
@@ -115,7 +115,7 @@ async function cropImage(base64Data, area) {
 
   // Convert back to base64
   const blobResult = await canvas.convertToBlob({ type: 'image/jpeg' });
-  
+
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
