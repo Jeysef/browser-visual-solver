@@ -28,7 +28,7 @@ async function handleCroppedAnalysis(area) {
       });
     });
 
-    if (!dataUrl) return { success: false, error: "Capture failed" };
+    if (!dataUrl) return { success: false, error: "_" };
 
     // 2. Crop the image using OffscreenCanvas
     const croppedDataUrl = await cropImage(dataUrl, area);
