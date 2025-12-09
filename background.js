@@ -80,7 +80,7 @@ async function handleCroppedAnalysis(area) {
 
   } catch (error) {
     console.error(error);
-    return { success: false, error: error.message };
+    return { success: false, error: "_" };
   }
 }
 
